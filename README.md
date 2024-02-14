@@ -1,6 +1,6 @@
 Code Repo for the article **"Dynamics of White Matter Architecture in Lexical Production among Middle-Aged Adults"**
 
-See the accompanying input and output neuroimaging data files at https://zenodo.org/doi/10.5281/zenodo.10423906
+See the accompanying repository for neuroimaging data files at https://zenodo.org/doi/10.5281/zenodo.10423906
 
 
 ***Highlights***
