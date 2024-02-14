@@ -1,0 +1,163 @@
+################################################################################
+# Written by Clément Guichet, PhD Student
+# LPNC - CNRS UMR 5105
+# 2024
+
+################################################################################
+
+library(tidyverse)
+library(rio)
+library(stringr)
+require(preprocessCore)
+require(ggpubr)
+library(readxl)
+
+rm(list = ls())
+setwd("E:/Research_Projects/MiddleAge_LARA/STATS/1_PreliminaryAnalysis/analysis/")
+
+# DATA WRANGLING ----
+
+demographics <- rio::import("E:/Research_Projects/MiddleAge_LARA/STATS/1_PreliminaryAnalysis/data_wrangling/AGE_COG_data_155Subj.csv") %>%
+  mutate(
+    ToT_Ratio_modified = 1 - ToT_Ratio,
+    Hotel_Task_modified = 1 - log(Hotel_Task)
+  )
+
+# TIV
+TIV <- read_excel("E:/Research_Projects/MiddleAge_LARA/DWI/participant_data_DTI.xlsx", sheet = "TIV", col_names = F)
+colnames(TIV) <- "TIV"
+
+data_middle_age <- cbind(demographics, TIV) %>% relocate(TIV, .after = MMSE)
+
+# Figure A.2 ----
+data_middle_age %>%
+  pivot_longer(
+    c(Cattell:Naming, Sentence_Comprehension_c:Hotel_Task_modified),
+    names_to = "Cognitive_assessment",
+    values_to = "performance"
+  ) %>%
+  mutate(Cognitive_assessment = ifelse(Cognitive_assessment == "Verbal_Fluency", "Verbal Fluency",
+    ifelse(Cognitive_assessment == "Sentence_Comprehension_c", "Sentence Comp",
+      ifelse(Cognitive_assessment == "Story_Recall", "Story Recall",
+        ifelse(Cognitive_assessment == "ToT_Ratio_modified", "Tip-of-the-tongue",
+          ifelse(Cognitive_assessment == "Hotel_Task_modified", "Hotel Task",
+            Cognitive_assessment
+          )
+        )
+      )
+    )
+  )) %>%
+  group_by(Cognitive_assessment) %>%
+  # perform quantile normalization
+  mutate(performance = as.numeric(scale(normalize.quantiles(as.matrix(performance))))) %>%
+  ggplot(aes(Age_Cog, performance, color = Cognitive_assessment)) +
+  geom_hline(yintercept = 0, color = "red") +
+  geom_jitter(height = 0.05, alpha = 0.08) +
+  geom_smooth(linewidth = 2, method = "gam", formula = y ~ s(x, k = 3), alpha = .5) +
+  scale_x_continuous(breaks = seq(45, 60, 5)) +
+  coord_cartesian(ylim = c(-1, 1), xlim = c(45, 60)) + # Specify the age range for the study
+  scale_color_brewer(palette = "Paired") +
+  theme_pubr(
+    base_size = 20,
+    legend = "none"
+  ) +
+  theme(
+    plot.title.position = "plot",
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    axis.title.x = element_blank()
+  ) +
+  labs(y = "Normalized score") +
+  facet_wrap(~Cognitive_assessment, scale = "free", ncol = 4)
+
+
+
+# DATA ANALYSIS ----
+summary(lm(age ~ gender_code, data = data_middle_age)) # No difference in mean age across genders
+summary(lm(TIV ~ gender_code + age + MMSE + hand, data = data_middle_age)) # Male (-0.5) TIV higher than Female's (0.5)
+summary(lm(MMSE ~ gender_code + age + TIV + hand, data = data_middle_age)) # Female have better overall cognition across genders
+summary(lm(hand ~ gender_code + age + TIV + MMSE, data = data_middle_age)) # No difference in handedness across genders
+p.adjust(c("0.526", "2e-16", "0.00836", "0.369"), method = "fdr")
+
+
+density_data <- data_middle_age %>% pivot_longer(., cols = c("age", "Age_Cog"), names_to = "age_type")
+
+# Figure A.1 ----
+ggplot(density_data, aes(value, color = age_type)) +
+  geom_density(fill = "#FDB863", alpha = .75, kernel = "epanechnikov", linewidth = 1.25, linetype = 1) +
+  theme_pubclean(base_size = 18) +
+  labs(x = "Age", y = "Density") +
+  ggtitle("Density Plot of Age")
+
+ggplot(data_middle_age, aes(x = as.factor(gender_code), y = age)) +
+  geom_violin(trim = FALSE) +
+  stat_summary(
+    fun.data = "mean_sdl", fun.args = list(mult = 1),
+    geom = "pointrange", color = "black"
+  ) +
+  geom_violin(aes(fill = as.factor(gender_code)), trim = FALSE) +
+  geom_boxplot(width = 0.2) +
+  scale_y_continuous(breaks = seq(45, 60, 3)) +
+  scale_fill_manual(values = c("#00AFBB", "#FC4E07")) +
+  theme_pubr(base_size = 16, legend = "none")
+
+ggplot(data_middle_age, aes(x = as.factor(gender_code), y = MMSE)) +
+  geom_violin(trim = FALSE) +
+  stat_summary(
+    fun.data = "mean_sdl", fun.args = list(mult = 1),
+    geom = "pointrange", color = "black"
+  ) +
+  geom_violin(aes(fill = as.factor(gender_code)), trim = FALSE) +
+  geom_boxplot(width = 0.2) +
+  scale_fill_manual(values = c("#00AFBB", "#FC4E07")) +
+  theme_pubr(base_size = 16, legend = "none")
+
+ggplot(data_middle_age, aes(x = as.factor(gender_code), y = TIV / 100000)) +
+  geom_violin(trim = FALSE) +
+  stat_summary(
+    fun.data = "mean_sdl", fun.args = list(mult = 1),
+    geom = "pointrange", color = "black"
+  ) +
+  geom_violin(aes(fill = as.factor(gender_code)), trim = FALSE) +
+  geom_boxplot(width = 0.2) +
+  scale_fill_manual(values = c("#00AFBB", "#FC4E07")) +
+  theme_pubr(base_size = 16, legend = "none")
+
+ggplot(data_middle_age, aes(x = as.factor(gender_code), y = hand)) +
+  geom_violin(trim = FALSE) +
+  stat_summary(
+    fun.data = "mean_sdl", fun.args = list(mult = 1),
+    geom = "pointrange", color = "black"
+  ) +
+  geom_violin(aes(fill = as.factor(gender_code)), trim = FALSE) +
+  geom_boxplot(width = 0.2) +
+  scale_fill_manual(values = c("#00AFBB", "#FC4E07")) +
+  theme_pubr(base_size = 16, legend = "none")
+
+
+
+# Section 2.1.2 and Table A.2 of he article
+desc_stats <- data_middle_age %>%
+  get_summary_stats() %>%
+  as.data.frame()
+
+summary(lm(Cattell ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+summary(lm(Proverb ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+summary(lm(Naming ~ gender_code * Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+summary(lm(ToT_Ratio_modified ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+summary(lm(Hotel_Task_modified ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+summary(lm(Sentence_Comprehension_c ~ gender_code * Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+summary(lm(Story_Recall ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+summary(lm(Verbal_Fluency ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+
+p.adjust(c("0.8918", "0.8025", "0.00588", "0.2601", "0.438997", "0.010028", "0.020642", "0.158"), method = "fdr")
+
+source("E:/Research_Projects/MiddleAge_LARA/STATS/helper_functions/PRE.R")
+PRE(lm(Cattell ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+PRE(lm(Proverb ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+PRE(lm(Naming ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+PRE(lm(ToT_Ratio_modified ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+PRE(lm(Hotel_Task_modified ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+PRE(lm(Sentence_Comprehension_c ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+PRE(lm(Story_Recall ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders
+PRE(lm(Verbal_Fluency ~ gender_code + Age_Cog + TIV + MMSE + hand, data = data_middle_age)) # No difference in mean age across genders

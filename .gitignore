@@ -1,0 +1,14 @@
+# ignore files with these extensions
+*.nii
+*.nii.gz
+*.mif
+*.mif.gz
+*.tck
+*.tsv
+
+# Ignore specific files
+W.mat
+H.mat
+res*.mat
+save_opts*.mat
+NMF_networks_composition.xlsx

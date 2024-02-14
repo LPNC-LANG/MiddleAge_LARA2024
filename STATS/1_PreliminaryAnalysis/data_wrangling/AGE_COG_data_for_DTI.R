@@ -1,0 +1,132 @@
+################################################################################
+# Written by Clément Guichet, PhD Student
+# LPNC - CNRS UMR 5105
+# 2024
+
+################################################################################
+
+library(tidyverse)
+library(readxl)
+library(data.table)
+
+rm(list = ls())
+setwd("E:/Research_Projects/MiddleAge_LARA/STATS/1_PreliminaryAnalysis/data_wrangling")
+################################################################################
+# CREATE N x B matrix where N is #subjects and B is #behavioral/neuropsy scores
+################################################################################
+
+# Load all subjects'ID
+participants <- read_excel("./meta_data/participant_data_T1.xlsx")[, c(1:4, 6)] %>%
+  mutate(gender_code = case_when(gender_code == 1 ~ -0.5, gender_code == 2 ~ 0.5)) %>% #-0.5 is MALE, 0.5 is FEMALE
+  dplyr::rename(Subj_ID = Subject) %>%
+  replace("Subj_ID", seq_len(628))
+
+# Load CAMCAN Cognitive data
+CAMCAN_cognitive_data <- read_excel("./meta_data/CognitiveData_CamCAN_Apr2022.xlsx") %>%
+  filter(Observations %in% participants$Observations) %>%
+  dplyr::rename(Age_Cog = Age) %>%
+  dplyr::select(c(
+    Observations,
+    MMSE,
+    Age_Cog,
+    Cattell, # Cattell Fluid intelligence
+    Proverbs_Summary__Score, # Proverb comprehension (abstraction & EF)
+    Picture__Primming_Summary_ACC_baseline_all, # Picture-picture priming (word production)
+    TOT_Summary_ToT_ratio # Tip-of-the-tongue
+  )) %>%
+  dplyr::rename(Proverb = Proverbs_Summary__Score) %>%
+  dplyr::rename(Naming = Picture__Primming_Summary_ACC_baseline_all) %>%
+  dplyr::rename(ToT_Ratio = TOT_Summary_ToT_ratio) %>%
+  mutate_at(vars(MMSE, Age_Cog), funs(as.numeric(.)))
+
+
+# Load CAMCAN Supplementary Cognitive data
+CAMCAN_cognitive_data_supp <- read_excel("./meta_data/CognitiveData_CamCAN_Supplement.xlsx") %>%
+  filter(Observations %in% participants$Observations) %>%
+  dplyr::select(c(
+    Observations,
+    Hotel_Task, # EF
+    Sentence_Comprehension_c, # Semantic
+    Story_Recall, # Memory
+    Verbal_Fluency # Language in interaction
+  )) %>%
+  mutate_at(vars(Hotel_Task, Sentence_Comprehension_c, Story_Recall, Verbal_Fluency), funs(as.numeric(.)))
+
+
+CAMCAN_CogData_FULL <- merge(CAMCAN_cognitive_data, CAMCAN_cognitive_data_supp, by = "Observations") %>%
+  merge(., participants, by = "Observations")
+
+################################################################################
+# DATA IMPUTATION
+
+# Exclude subjects with < 3 missing scores
+# Impute the median age-decile score for the remaining
+# Excluding CC510015 from middle-aged sample
+################################################################################
+
+# Exclusion
+CAMCAN_CogData_FULL_exclusion <- CAMCAN_CogData_FULL %>%
+  mutate(
+    E0 = ifelse(is.na(MMSE) | is.nan(MMSE), 1, 0),
+    E1 = ifelse(is.na(Cattell) | is.nan(Cattell), 1, 0),
+    E2 = ifelse(is.na(Proverb) | is.nan(Cattell), 1, 0),
+    E3 = ifelse(is.na(Naming) | is.nan(Cattell), 1, 0),
+    E4 = ifelse(is.na(ToT_Ratio) | is.nan(ToT_Ratio), 1, 0),
+    E5 = ifelse(is.na(Hotel_Task) | is.nan(Hotel_Task), 1, 0),
+    E6 = ifelse(is.na(Sentence_Comprehension_c) | is.nan(Sentence_Comprehension_c), 1, 0),
+    E7 = ifelse(is.na(Story_Recall) | is.nan(Story_Recall), 1, 0),
+    E8 = ifelse(is.na(Verbal_Fluency) | is.nan(Verbal_Fluency), 1, 0),
+    E_tot = E0 + E1 + E2 + E3 + E4 + E5 + E6 + E7 + E8
+  ) %>% # Total number of missing scores
+  filter(E_tot < 3) # Discard subjects with more 3 or more
+
+
+
+# Age-decile binning
+binned <- CAMCAN_CogData_FULL_exclusion %>%
+  mutate(Age_Cog_decile = ifelse(Age_Cog <= 29, 25,
+    ifelse(Age_Cog <= 39, 35,
+      ifelse(Age_Cog <= 49, 45,
+        ifelse(Age_Cog <= 59, 55,
+          ifelse(Age_Cog <= 69, 65,
+            ifelse(Age_Cog <= 79, 75, 85)
+          )
+        )
+      )
+    )
+  )) %>%
+  group_by(Age_Cog_decile, .all = TRUE) %>%
+  group_split()
+
+# For each age decile
+imputed_list <- list()
+for (i in 1:length(binned)) {
+  tmp <- rbindlist(lapply(binned[i], as.data.table)) %>% as.data.frame()
+  tmp_select <- tmp[, c(2, 4:11)] # Select the cog measures
+  # getting median of each column using apply()
+  all_column_median <- apply(tmp_select, 2, median, na.rm = TRUE)
+  # imputing median value
+  for (j in colnames(tmp_select)) {
+    tmp_select[, j][is.na(tmp_select[, j])] <- all_column_median[j]
+  }
+  tmp_imputed <- cbind(
+    tmp[, c(12, 1, 3, 13:15)],
+    tmp_select
+  )
+  imputed_list[[i]] <- tmp_imputed
+}
+
+CAMCAN_cognitive_data_imputed <- rbindlist(imputed_list)
+
+
+################################################################################
+################################################################################
+
+# Load and keep only the middle-aged subjects retained for DTI analysis in the study (45-60 included)
+subj_DTI <- rio::import("./meta_data/participant_data_DTI.csv")
+AGE_COG_data <- CAMCAN_cognitive_data_imputed %>%
+  filter(Observations %in% subj_DTI$Observations) %>%
+  arrange(Observations)
+
+# Excluded CC510015 from middle-aged sample
+# write.csv(AGE_COG_data, "AGE_COG_data_155Subj.csv")

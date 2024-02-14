@@ -1,0 +1,18 @@
+# Combine Tracts for visualization of LC2 as it did not map onto NMF networks
+# VISUALIZATION by loading the mesh TW-FA 25 with surfice, loading up the network.nii and the tck file obtained after merging the main bundles as follows:
+
+# 56% versus 35%: I chose to represent 6 left bundle for 4 right
+
+tckedit -force 
+	LC2_neg_cluster1_STR_left.tck 
+	LC2_neg_cluster1_T_PREC_left.tck
+	LC2_neg_cluster1_ST_PREC_left.tck
+	LC2_neg_cluster1_T_POSTC_left.tck
+	LC2_neg_cluster1_POPT_left.tck
+	LC2_neg_cluster1_CST_left.tck
+
+	LC2_neg_cluster2_STR_right.tck
+	LC2_neg_cluster2_T_PREC_right.tck
+	LC2_neg_cluster2_T_POSTC_right.tck
+	LC2_neg_cluster2_T_PAR_right.tck
+	LC2_negcluster1and2viz.tck

@@ -1,0 +1,15 @@
+# VISUALIZATION according to according to NMF_composition.xlsx
+# Load the mesh TW-FA 25 with surfice, loading up the network.nii and the tck file obtained after merging the main bundles as follows:
+# Merge the bundles with at least 20% of their fibers passing through the mask 
+
+tckedit 4_SLF_III_right.tck 4_FX_left.tck 4_CC_5.tck 4_ILF_right.tck 4_ST_OCC_right.tck 4_track_overlay.tck
+
+tckedit 5_SLF_II_left.tck 5_SLF_I_left.tck 5_MLF_right.tck 5_SLF_I_right.tck 5_SLF_II_right.tck 5_MLF_left.tck 5_CC_6.tck 5_track_overlay.tck
+
+tckedit 7_FX_right.tck 7_CC_7.tck 7_OR_right.tck 7_T_OCC_right.tck 7_OR_left.tck 7_T_OCC_left.tck 7_track_overlay.tck
+
+tckedit 11_CC_2.tck 11_ATR_right.tck 11_CC_1.tck 11_ST_FO_right.tck 11_ST_PREF_right.tck 11_T_PREF_right.tck 11_ATR_left.tck 11_ST_FO_left.tck 11_track_overlay.tck
+
+tckedit 14_ICP_right.tck 14_MCP.tck 14_ICP_left.tck 14_SCP_right.tck 14_SCP_left.tck 14_track_overlay.tck
+
+tckedit 16_CG_left.tck 16_SLF_I_left.tck 16_UF_right.tck 16_SLF_II_left.tck 16_CA.tck 16_MLF_left.tck 16_IFO_right.tck 16_track_overlay.tck

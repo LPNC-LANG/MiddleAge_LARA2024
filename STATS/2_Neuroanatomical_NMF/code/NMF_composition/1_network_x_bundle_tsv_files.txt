@@ -1,0 +1,36 @@
+#################################################################
+# Template TOM_trackings.tck overlayed onto NMF networks
+#################################################################
+
+# conda activate modelarray
+
+# Computute overlap 
+for network in {4,5,7,11,14,16}; do # network showing association with age
+
+	# Generate Track files crossing each network's clusters' 
+	for_each /mnt/e/Research_Projects/MiddleAge_LARA/DWI/TractSeg_on_template/TOM_trackings/*.tck : 
+		tckedit /mnt/e/Research_Projects/MiddleAge_LARA/DWI/TractSeg_on_template/TOM_trackings/PRE.tck 
+		-include /mnt/e/Research_Projects/MiddleAge_LARA/STATS/2_Neuroanatomical_NMF/output/NIFTI/networks_nifti_cluster/clusters_network_${network}.nii ${network}_PRE.tck
+
+
+
+# To run in /mnt/e/Research_Projects/MiddleAge_LARA/STATS/2_Neuroanatomical_NMF/output/NIFTI/NMF_composition
+
+	# Connectivity-based overlap
+	for bundle in `cat list_bundles.txt`; do
+		tckinfo ${network}_${bundle}.tck | grep file >> ${network}_connectivity_overlap.tsv
+		tckinfo ${network}_${bundle}.tck | grep count >> ${network}_connectivity_overlap.tsv
+	done
+
+	# Spatial overlap: bundle-focused
+	for bundle in `cat list_bundles.txt`; do
+		mrstats ${bundle}.nii -ignorezero | grep [0] >> ${network}_spatial_overlap_bundlefoc.tsv
+		mrstats ${bundle}.nii -mask clusters_network_${network}.nii -ignorezero | grep [0] >> ${network}_spatial_overlap_bundlefoc.tsv
+	done
+
+	# Spatial overlap: network-focused
+	for bundle in `cat list_bundles.txt`; do
+		mrstats clusters_network_${network}.nii -ignorezero | grep [0] >> ${network}_spatial_overlap_netfoc.tsv
+		mrstats clusters_network_${network}.nii -mask ${bundle}.nii -ignorezero | grep [0] >> ${network}_spatial_overlap_netfoc.tsv
+	done
+done

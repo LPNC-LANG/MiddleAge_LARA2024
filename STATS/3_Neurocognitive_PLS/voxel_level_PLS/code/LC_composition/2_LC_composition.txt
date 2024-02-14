@@ -1,0 +1,96 @@
+#################################################################
+# Template TOM_trackings.tck overlayed onto Salience map (negative)
+#################################################################
+
+# conda activate modelarray
+
+# Computute connectivity overlap 
+for_each /mnt/e/Research_Projects/MiddleAge_LARA/DWI/TractSeg_on_template/TOM_trackings/*.tck : 
+	tckedit /mnt/e/Research_Projects/MiddleAge_LARA/DWI/TractSeg_on_template/TOM_trackings/PRE.tck PRE.tck 
+	-include path/to/LC1_BSR_negative_binary_cluster1.nii LC1_neg_cluster1_PRE.tck
+
+for bundle in `cat list_bundles.txt`; do
+	tckinfo LC1_neg_cluster1_${bundle}.tck | grep file >> LC1_percentage_tracks_cluster1.tsv
+	tckinfo LC1_neg_cluster1_${bundle}.tck | grep count >> LC1_percentage_tracks_cluster1.tsv
+done
+	
+
+# Spatial overlap: bundle-focused
+for bundle in `cat list_bundles.txt`; do
+	mrstats ${bundle}.nii -ignorezero | grep [0] >> LC1_spatial_percentage_tracks_cluster1.tsv
+	mrstats ${bundle}.nii -mask ../LC1_BSR_negative_binary_cluster1.nii -ignorezero | grep [0] >> LC1_spatial_percentage_tracks_cluster1.tsv
+done
+
+# Spatial overlap: network-focused
+for bundle in `cat list_bundles.txt`; do
+	mrstats ../LC1_BSR_negative_binary_cluster1.nii -ignorezero | grep [0] >> LC1_spatial_percentage_network_cluster1.tsv
+	mrstats ../LC1_BSR_negative_binary_cluster1.nii -mask ${bundle}.nii -ignorezero | grep [0] >> LC1_spatial_percentage_network_cluster1.tsv
+done
+
+
+
+# Cluster2
+for_each /mnt/e/Research_Projects/MiddleAge_LARA/DWI/TractSeg_on_template/TOM_trackings/*.tck : 
+	tckedit /mnt/e/Research_Projects/MiddleAge_LARA/DWI/TractSeg_on_template/TOM_trackings/PRE.tck 
+    -include path/to//LC1_BSR_negative_binary_cluster2.nii LC1_neg_cluster2_PRE.tck
+
+for bundle in `cat list_bundles.txt`; do
+	tckinfo LC1_neg_cluster2_${bundle}.tck | grep file >> LC1_percentage_tracks_cluster2.tsv
+	tckinfo LC1_neg_cluster2_${bundle}.tck | grep count >> LC1_percentage_tracks_cluster2.tsv
+done
+	
+
+# Spatial overlap
+for bundle in `cat list_bundles.txt`; do
+	mrstats ${bundle}.nii -ignorezero | grep [0] >> LC1_spatial_percentage_tracks_cluster2.tsv
+	mrstats ${bundle}.nii -mask ../LC1_BSR_negative_binary_cluster2.nii -ignorezero | grep [0] >> LC1_spatial_percentage_tracks_cluster2.tsv
+done
+
+#Cluster3
+for_each /mnt/e/DWI/TractSeg/template/TOM_trackings/*.tck : tckedit /mnt/e/DWI/TractSeg/template/TOM_trackings/PRE.tck -include ../LC1_BSR_negative_binary_cluster3.nii LC1_neg_cluster3_PRE.tck
+
+for bundle in `cat list_bundles.txt`; do
+	tckinfo LC1_neg_cluster3_${bundle}.tck | grep file >> LC1_percentage_tracks_cluster3.tsv
+	tckinfo LC1_neg_cluster3_${bundle}.tck | grep count >> LC1_percentage_tracks_cluster3.tsv
+done
+	
+
+# Spatial overlap
+for bundle in `cat list_bundles.txt`; do
+	mrstats ${bundle}.nii -ignorezero | grep [0] >> LC1_spatial_percentage_tracks_cluster3.tsv
+	mrstats ${bundle}.nii -mask ../LC1_BSR_negative_binary_cluster3.nii -ignorezero | grep [0] >> LC1_spatial_percentage_tracks_cluster3.tsv
+done
+
+
+
+
+# LC2 Cluster 1
+for_each /mnt/e/DWI/TractSeg/template/TOM_trackings/*.tck : tckedit /mnt/e/DWI/TractSeg/template/TOM_trackings/PRE.tck -include ../LC2_BSR_negative_binary_cluster1.nii LC2_neg_cluster1_PRE.tck
+
+for bundle in `cat list_bundles.txt`; do
+	tckinfo LC2_neg_cluster1_${bundle}.tck | grep file >> LC2_percentage_tracks_cluster1.tsv
+	tckinfo LC2_neg_cluster1_${bundle}.tck | grep count >> LC2_percentage_tracks_cluster1.tsv
+done
+	
+
+# Spatial overlap
+for bundle in `cat list_bundles.txt`; do
+	mrstats ${bundle}.nii -ignorezero | grep [0] >> LC2_spatial_percentage_tracks_cluster1.tsv
+	mrstats ${bundle}.nii -mask ../LC2_BSR_negative_binary_cluster1.nii -ignorezero | grep [0] >> LC2_spatial_percentage_tracks_cluster1.tsv
+done
+
+# LC2 Cluster 2
+for_each /mnt/e/DWI/TractSeg/template/TOM_trackings/*.tck : tckedit /mnt/e/DWI/TractSeg/template/TOM_trackings/PRE.tck -include ../LC2_BSR_negative_binary_cluster2.nii LC2_neg_cluster2_PRE.tck
+
+for bundle in `cat list_bundles.txt`; do
+	tckinfo LC2_neg_cluster2_${bundle}.tck | grep file >> LC2_percentage_tracks_cluster2.tsv
+	tckinfo LC2_neg_cluster2_${bundle}.tck | grep count >> LC2_percentage_tracks_cluster2.tsv
+done
+	
+
+# Spatial overlap
+for bundle in `cat list_bundles.txt`; do
+	mrstats ${bundle}.nii -ignorezero | grep [0] >> LC2_spatial_percentage_tracks_cluster2.tsv
+	mrstats ${bundle}.nii -mask ../LC2_BSR_negative_binary_cluster2.nii -ignorezero | grep [0] >> LC2_spatial_percentage_tracks_cluster2.tsv
+done
+

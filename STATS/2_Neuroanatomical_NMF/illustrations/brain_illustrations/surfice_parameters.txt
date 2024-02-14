@@ -1,0 +1,6 @@
+SURFICE PARAMETERS
+
+Track min 25
+width 4
+x ray 20
+float ambient 0.25
